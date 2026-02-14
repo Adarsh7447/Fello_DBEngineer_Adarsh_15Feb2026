@@ -1,6 +1,6 @@
 # Deliverable 1: Entity Mapping & Matching Strategy
 
-**Prepared By:** Adarsh Badjate (via Cascade)
+**Prepared By:** Adarsh Badjate
 **Date:** 15-Feb-2026
 
 ## 1. Objective
@@ -9,7 +9,7 @@ This document details the production-grade entity resolution framework designed 
 
 ## 2. Architectural Solution: Data Flattening
 
-The primary challenge is the `team_members` JSONB array within the raw `bronze.company_info_raw` table. Direct joins on nested JSON are inefficient and not scalable. To solve this, a Silver Layer table, `public.unified_company_member`, was created to hold a structured, relational version of this data.
+The primary challenge is the `team_members` JSONB array within the raw `public.company_info_raw` table. Direct joins on nested JSON are inefficient and not scalable. To solve this, a Silver Layer table, `public.unified_company_member`, was created to hold a structured, relational version of this data.
 
 ### Transformation Process (`run_unified_member_pipeline`)
 
