@@ -1,6 +1,14 @@
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pg_trgm";
 
+CREATE OR REPLACE FUNCTION update_last_updated_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.last_updated = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 CREATE TABLE IF NOT EXISTS public.new_unified_agents (
     -- Primary Key
     agent_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -29,9 +37,12 @@ CREATE TABLE IF NOT EXISTS public.new_unified_agents (
     
 );
 
-alter table public.new_unified_agents
-add constraint new_unified_agents_unique_name_team
-unique (full_name, source_team_id);
+ALTER TABLE public.new_unified_agents
+DROP CONSTRAINT IF EXISTS new_unified_agents_unique_name_team;
+
+CREATE UNIQUE INDEX IF NOT EXISTS 
+new_unified_agents_unique_name_team
+ON public.new_unified_agents (full_name, source_team_id);
 
 CREATE INDEX IF NOT EXISTS idx_unified_agents_team_id 
     ON public.new_unified_agents(source_team_id);

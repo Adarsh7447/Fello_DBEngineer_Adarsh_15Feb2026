@@ -62,40 +62,85 @@ class DataLoader:
         
         return csv_path
     
-    def _load_csv_with_copy(self, csv_path: Path, schema: str, table: str) -> int:
-        """
-        Load CSV using PostgreSQL COPY command (fastest method)
+    # def _load_csv_with_copy(self, csv_path: Path, schema: str, table: str) -> int:
+    #     """
+    #     Load CSV using PostgreSQL COPY command (fastest method)
         
-        Args:
-            csv_path: Path to CSV file
-            schema: Database schema
-            table: Table name
+    #     Args:
+    #         csv_path: Path to CSV file
+    #         schema: Database schema
+    #         table: Table name
             
-        Returns:
-            Number of rows loaded
-        """
+    #     Returns:
+    #         Number of rows loaded
+    #     """
+    #     try:
+    #         with self.db_manager.get_cursor() as cursor:
+    #             # Use COPY command for bulk loading
+    #             with open(csv_path, 'r', encoding='utf-8') as f:
+    #                 # Skip header row
+    #                 next(f)
+                    
+    #                 copy_sql = f"""
+    #                     COPY {schema}.{table}
+    #                     FROM STDIN
+    #                     WITH (FORMAT csv, HEADER false, DELIMITER ',', NULL '')
+    #                 """
+                    
+    #                 cursor.copy_expert(copy_sql, f)
+    #                 row_count = cursor.rowcount
+                    
+    #             logger.info(f"Loaded {row_count} rows into {schema}.{table}")
+    #             return row_count
+                
+    #     except Exception as e:
+    #         logger.error(f"Failed to load CSV using COPY: {e}")
+    #         raise
+    def _load_csv_with_copy(self, csv_path: Path, schema: str, table: str) -> int:
         try:
             with self.db_manager.get_cursor() as cursor:
-                # Use COPY command for bulk loading
+                
+                # 1️⃣ Read CSV header
                 with open(csv_path, 'r', encoding='utf-8') as f:
-                    # Skip header row
-                    next(f)
-                    
-                    copy_sql = f"""
-                        COPY {schema}.{table}
-                        FROM STDIN
-                        WITH (FORMAT csv, HEADER false, DELIMITER ',', NULL '')
-                    """
-                    
+                    reader = csv.reader(f)
+                    csv_columns = next(reader)
+
+                # 2️⃣ Fetch table columns dynamically
+                cursor.execute("""
+                    SELECT column_name
+                    FROM information_schema.columns
+                    WHERE table_schema = %s
+                    AND table_name = %s
+                    ORDER BY ordinal_position
+                """, (schema, table))
+
+                table_columns = [row[0] for row in cursor.fetchall()]
+
+                # 3️⃣ Keep only columns present in both
+                valid_columns = [col for col in csv_columns if col in table_columns]
+
+                if not valid_columns:
+                    raise ValueError("No matching columns between CSV and table")
+
+                column_list = ', '.join(valid_columns)
+
+                # 4️⃣ Perform COPY using only valid columns
+                copy_sql = f"""
+                    COPY {schema}.{table} ({column_list})
+                    FROM STDIN
+                    WITH (FORMAT csv, HEADER true, DELIMITER ',', NULL '')
+                """
+
+                with open(csv_path, 'r', encoding='utf-8') as f:
                     cursor.copy_expert(copy_sql, f)
                     row_count = cursor.rowcount
-                    
-                logger.info(f"Loaded {row_count} rows into {schema}.{table}")
+
                 return row_count
-                
+
         except Exception as e:
             logger.error(f"Failed to load CSV using COPY: {e}")
             raise
+
     
     def _load_csv_with_insert(self, csv_path: Path, schema: str, table: str, batch_size: int = 1000) -> int:
         """

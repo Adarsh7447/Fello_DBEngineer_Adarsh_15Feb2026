@@ -1,4 +1,4 @@
-create table public.unified_company_member (
+create table if not exists public.unified_company_member (
     id uuid default gen_random_uuid() primary key,
     research_uuid uuid,
     team_id uuid,

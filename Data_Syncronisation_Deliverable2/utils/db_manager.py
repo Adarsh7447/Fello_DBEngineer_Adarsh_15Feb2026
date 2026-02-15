@@ -189,9 +189,19 @@ class DatabaseManager:
                         AND table_name = %s
                     )
                 """, (schema, table_name))
-                return cursor.fetchone()[0]
+                result = cursor.fetchone()
+                logger.debug(f"Table check for {schema}.{table_name}: result={result}")
+                if result is not None:
+                    # Handle both RealDictRow and regular tuple results
+                    exists = result['exists'] if hasattr(result, 'get') else result[0]
+                    logger.debug(f"Table {schema}.{table_name} exists: {exists}")
+                    return exists
+                logger.warning(f"Table check returned None for {schema}.{table_name}")
+                return False
         except Exception as e:
-            logger.error(f"Error checking table existence: {e}")
+            import traceback
+            logger.error(f"Error checking table existence for {schema}.{table_name}: {type(e).__name__}: {e}")
+            logger.error(f"Traceback: {traceback.format_exc()}")
             return False
     
     def get_row_count(self, table_name: str, schema: str = 'public') -> int:

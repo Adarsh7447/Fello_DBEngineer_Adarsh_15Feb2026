@@ -1,5 +1,5 @@
 -- company_info_raw table 
-CREATE TABLE IF NOT EXISTS bronze.company_info_raw (
+CREATE TABLE IF NOT EXISTS public.company_info_raw (
     research_uuid UUID PRIMARY KEY,
     team_id UUID NULL,
     website TEXT NULL,

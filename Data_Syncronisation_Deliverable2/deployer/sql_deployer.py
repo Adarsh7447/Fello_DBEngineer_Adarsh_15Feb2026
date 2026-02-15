@@ -334,7 +334,7 @@ class SQLDeployer:
         logger.info("=" * 70)
         
         expected_tables = [
-            ('bronze', 'company_info_raw'),
+            ('public', 'company_info_raw'),
             ('public', 'unified_company_member'),
             ('public', 'new_agents'),
             ('public', 'unified_merge_logs'),
@@ -421,7 +421,7 @@ class SQLDeployer:
             
             # Map to schema.table format
             schema_mapping = {
-                'company_info_raw': 'bronze.company_info_raw',
+                'company_info_raw': 'public.company_info_raw',
                 'unified_company_member': 'public.unified_company_member',
                 'new_agents': 'public.new_agents',
                 'unified_merge_logs': 'public.unified_merge_logs',
